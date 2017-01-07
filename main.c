@@ -64,7 +64,7 @@ static void fail(void)
     while (1) { }
 }
 
-void init()
+void init(void)
 {
     //CriticalSectionLocker lock;
     if (!initialized)
