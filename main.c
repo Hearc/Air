@@ -103,19 +103,15 @@ int main(void)
     printf("System start! \r\n");
 
     Init_ADC_PinMux();                                       //ADC引脚配置 P0_11
-    DEBUGSTR("ADC Demo\r\n");
 
     /* ADC Init */
     Chip_ADC_Init(LPC_ADC, &ADCSetup);                       //初始化ADC
-    //LPC_ADC->CR |= 0xff;
+
     Chip_ADC_EnableChannel(LPC_ADC, ADC_CH0, ENABLE);        //使能ADC通道0
-//    Chip_ADC_EnableChannel(LPC_ADC, ADC_CH1, ENABLE);      //使能ADC通道1
-    /*配置PWM由引脚P0_8输出 控制静脉夹或电机*/
-    //Timer16_0_Init();		
-//    T16B0_cnt_init();
-//    Timer16_1_Init();
+
     /*配置引脚P1_1 产生2MHz PWM 发送到压电陶瓷*/
     Timer32_1_Init();
+
     /*每 100us 产生中断 向压电陶瓷发送方波 并读取反馈*/
     Timer32_0_Init();
     

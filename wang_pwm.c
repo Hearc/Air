@@ -62,6 +62,20 @@ uint32_t     GulNum;                                                    /* ´®¿Ú½
 
 uint8_t TxBuff[8];
 uint8_t RxBuff[8];
+/*****************************************************************************
+ * Private functions
+ ****************************************************************************/
+ void MagenticValve_ON(void)
+{
+	Chip_GPIO_WritePortBit(LPC_GPIO,2,0,0);
+	Chip_GPIO_WritePortBit(LPC_GPIO,2,6,1);
+}
+
+void MagenticValve_OFF(void)
+{
+	Chip_GPIO_WritePortBit(LPC_GPIO,2,0,1);
+	Chip_GPIO_WritePortBit(LPC_GPIO,2,6,0);
+}
 
 /*! \fn       start_pwm(void)
  *  \brief    ??PWM
@@ -86,24 +100,15 @@ static void stop_pwm(void)
     LPC_TIMER32_1->TCR = 0x02;
 }
 
-/*****************************************************************************
- * Private functions
- ****************************************************************************/
 /* ¶ÁÈ¡½Ç¶ÈÖµ */ 
 void Angle_Value()
 {
 	/* Start A/D conversion ¿ªÆôADC×ª»»*/
-//	Chip_ADC_EnableChannel(LPC_ADC, ADC_CH1, ENABLE);		//Ê¹ÄÜADCÍ¨µÀ1
-//	Chip_ADC_EnableChannel(LPC_ADC, ADC_CH0, DISABLE);		//Ê¹ÄÜADCÍ¨µÀ0
-	//Chip_ADC_SetStartMode(LPC_ADC, ADC_START_NOW, ADC_TRIGGERMODE_RISING);
 	Chip_ADC_SetStartMode(LPC_ADC, ADC_NO_START, ADC_TRIGGERMODE_RISING);
 	/* Waiting for A/D conversion completeµÈ´ý×ª»»Íê³É */
 	while (Chip_ADC_ReadStatus(LPC_ADC, ADC_CH1, ADC_DR_DONE_STAT) != SET) {}
 	/* Read ADC value */
 	Chip_ADC_ReadValue(LPC_ADC, ADC_CH1, &anglevalue);
-		
-//	Chip_ADC_EnableChannel(LPC_ADC, ADC_CH0, ENABLE);		//Ê¹ÄÜADCÍ¨µÀ1
-//	Chip_ADC_EnableChannel(LPC_ADC, ADC_CH1, DISABLE);		//Ê¹ÄÜADCÍ¨µÀ0
 }	
  
 /*********************************************************************************************************
@@ -148,7 +153,8 @@ void UART_IRQHandler (void)
 
     while ((LPC_USART->IIR & 0x01) == 0)
     {                                                                   /*  ÅÐ¶ÏÊÇ·ñÓÐÖÐ¶Ï¹ÒÆð          */
-        switch (LPC_USART->IIR & 0x0E){                                 /*  ÅÐ¶ÏÖÐ¶Ï±êÖ¾                */
+        switch (LPC_USART->IIR & 0x0E)
+        {                                 /*  ÅÐ¶ÏÖÐ¶Ï±êÖ¾                */
         
             case 0x04:                                                  /*  ½ÓÊÕÊý¾ÝÖÐ¶Ï                */
                 GucRcvNew = 1;                                          /*  ÖÃ½ÓÊÕÐÂÊý¾Ý±êÖ¾            */
@@ -178,7 +184,6 @@ void UART_IRQHandler (void)
         {
             case 0x50:
             {
-                //masterstate = GucRcvBuf[1];
                 TxBuff[0] = 0xB0;
                 TxBuff[1] = masterstate;
 
@@ -195,7 +200,6 @@ void UART_IRQHandler (void)
 
             case 0x51:
             {
-                //masterstate = GucRcvBuf[1];
                 TxBuff[0] = 0xB1;
                 TxBuff[1] = masterstate;
                 TxBuff[2] = sensitivity >> 8;
@@ -210,14 +214,12 @@ void UART_IRQHandler (void)
 
             case 0x61:
             {
-                //masterstate = GucRcvBuf[1];
                 sensitivity = (GucRcvBuf[2] << 8) + GucRcvBuf[3];
                 break;
             }
            
             case 0x60:
             {
-                //masterstate = GucRcvBuf[1];
                 check = GucRcvBuf[8];
                 if((masterstate == 0x02) && (check == 0x01 || check == 0x02))
                 {
@@ -289,10 +291,6 @@ void Timer32_1_Init (void)
 //    Chip_TIMER_SetMatch(LPC_TIMER32_1, 1, (Chip_Clock_GetSystemClockRate() / 1000000));
 //    LPC_TIMER32_1->MR[1]     = LPC_TIMER32_1->MR[3]/4;                    /* MAT1Êä³ö75%·½²¨              */
     LPC_TIMER32_1->TCR     = 0x01;                                          /* Æô¶¯¶¨Ê±Æ÷                   */
-    
-//		Chip_TIMER_Enable(LPC_TIMER32_1);
-//		NVIC_ClearPendingIRQ(TIMER_32_1_IRQn);  			// Enable timer interrupt
-//		NVIC_EnableIRQ(TIMER_32_1_IRQn);
 }
 
 /*********************************************************************************************************
@@ -397,14 +395,12 @@ void ADC_Read (uint32_t ulTime)
 {
     uint16_t dataADC;
 
-//    while (ulTime--) {
     /* Start A/D conversion ¿ªÆôADC×ª»»*/
     Chip_ADC_SetStartMode(LPC_ADC, ADC_START_NOW, ADC_TRIGGERMODE_RISING);
     //Chip_ADC_SetStartMode(LPC_ADC, ADC_NO_START, ADC_TRIGGERMODE_RISING);
     
     /* Waiting for A/D conversion completeµÈ´ý×ª»»Íê³É */
     while (Chip_ADC_ReadStatus(LPC_ADC, ADC_CH0, ADC_DR_DONE_STAT) != SET) {}
-//    Chip_GPIO_WritePortBit(LPC_GPIO,2,1,0);
     /* Read ADC value */
     Chip_ADC_ReadValue(LPC_ADC, ADC_CH0, &dataADC);
 
@@ -423,6 +419,18 @@ void ADC_Read (uint32_t ulTime)
  *********************************************************************/
 void SysTick_Handler(void)
 {
+	static uint16_t i;
+	i++;
+	if(i >= 100) 
+	{
+		i = 0;
+		Chip_GPIO_WritePortBit(LPC_GPIO,2,8,1);
+	}
+	else
+    {   
+        Chip_GPIO_WritePortBit(LPC_GPIO,2,8,0);
+    }
+
     Chip_GPIO_SetPinToggle(LPC_GPIO, 2, 1);
 
     if(CmpCounter > sensitivity)                        /* Õý³£Ê± */
@@ -430,6 +438,7 @@ void SysTick_Handler(void)
         Chip_GPIO_WritePortBit(LPC_GPIO,2,7,0);
         /*  */
         airbubblestart = 0;
+        ///MagenticValve_ON();
         //ÅÐ¶Ïµç»úÊÇ·ñ¿ªÆô Èç¹ûµç»úÃ»ÓÐ¿ªÆô motor_on = 1;
         if(anglevalue < anglevalue_on)
         {
@@ -440,9 +449,12 @@ void SysTick_Handler(void)
     {
         Chip_GPIO_WritePortBit(LPC_GPIO,2,7,1);
         airbubblestart = 1;
+        ///MagenticValve_OFF();
         //ÅÐ¶Ïµç»úÊÇ·ñ¹Ø±Õ Èç¹ûÎ´¹Ø±Õ motor_off = 1;
         if(anglevalue > anglevalue_off)
+        {
             motor_off = 1;
+        }
     }
 
     CmpCounter = 0;
@@ -454,11 +466,11 @@ void SysTick_Handler(void)
             TxBuff[0] = 0xA0;
             TxBuff[1] = masterstate;
             TxBuff[2] = 0;
-            TxBuff[3] = 0;
-            TxBuff[4] = 1;
+            TxBuff[3] = (!airbubblestart) << 1;
+            TxBuff[4] = 0;
             TxBuff[5] = 0;
             TxBuff[6] = 0;
-            TxBuff[7] = 0;
+            TxBuff[7] = airbubblestart;
             Chip_UART_SendBlocking(LPC_USART,&TxBuff, 8);
         }
     }
@@ -468,8 +480,6 @@ void SysTick_Handler(void)
         if(motor_off)
         {
             motor_off = 0;
-            /* µç»ú¿ØÖÆ ¹Ø */
-
 
             TxBuff[0] = 0xA0;
             TxBuff[1] = masterstate;
@@ -481,7 +491,6 @@ void SysTick_Handler(void)
             TxBuff[7] = 0;
             Chip_UART_SendBlocking(LPC_USART,&TxBuff, 8);
             Chip_GPIO_WritePortBit(LPC_GPIO,2,7,1);
-            //Chip_GPIO_WritePortBit(LPC_GPIO,2,10,0);		//Ê¹ÄÜµç»ú
         }
     }
 
@@ -490,31 +499,28 @@ void SysTick_Handler(void)
         if(motor_on)
         {
             motor_on = 0;
-            /* µç»ú¿ØÖÆ ¿ª */
             Chip_GPIO_WritePortBit(LPC_GPIO,2,7,1);
-            //Chip_GPIO_WritePortBit(LPC_GPIO,2,10,0);		//Ê¹ÄÜµç»ú
         }
     }
-    /* µç»ú±£³ÖÔ­ÓÐ×´Ì¬ */
 }
 
 uint16_t ADCRead(uint8_t channlenum)
 {
     uint32_t regVal = 0;
     uint16_t ADC_Data = 0;
-//	if(channlenum >= 8)
-//		channlenum = 0;
+    uint16_t i;
+
     //LPC_ADC->CR |= 1 << 24;
-    //µÈ´ý×ª»»Íê³É
-    while((LPC_ADC->DR[channlenum] & 0x80000000) == 0);
-
-    regVal = LPC_ADC->DR[channlenum];
-    if(regVal & ADC_DR_OVERRUN_STAT)
+    /* Start A/D conversion ¿ªÆôADC×ª»»*/
+    Chip_ADC_SetStartMode(LPC_ADC, ADC_START_NOW, ADC_TRIGGERMODE_RISING);
+    for(i=0;i<5;i++)
     {
-        return (0);
-    }
-    ADC_Data = regVal & 0x3FF;
+        /* Waiting for A/D conversion completeµÈ´ý×ª»»Íê³É */
+        while (Chip_ADC_ReadStatus(LPC_ADC, ADC_CH1, ADC_DR_DONE_STAT) != SET) {}
 
+        /* Read ADC value */
+        Chip_ADC_ReadValue(LPC_ADC, ADC_CH1, &ADC_Data);
+	}
     return(ADC_Data);
 }
 
